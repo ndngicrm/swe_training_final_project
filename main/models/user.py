@@ -10,7 +10,7 @@ from main import db
 class UserModel(db.Model):
     __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(mysql.VARCHAR(320), nullable=False)
+    email = db.Column(mysql.VARCHAR(320), nullable=False, unique=True)
     password = db.Column(mysql.CHAR(64), nullable=False)
     salt = db.Column(mysql.CHAR(32), nullable=False)
     created_time = db.Column(db.DateTime, default=datetime.now)
