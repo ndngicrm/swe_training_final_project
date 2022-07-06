@@ -1,12 +1,13 @@
 from importlib import import_module
 
-from flask import Flask
+from flask import Flask, request
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
 from .commons.error_handlers import register_error_handlers
 from .config import config
+from .route import register_routes
 
 app = Flask(__name__)
 app.config.from_object(config)
@@ -28,3 +29,4 @@ def register_subpackages():
 
 register_subpackages()
 register_error_handlers(app)
+register_routes(app)
