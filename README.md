@@ -1,4 +1,4 @@
-# Got It's Final Project Template
+# Got It's SWE Final Project
 
 ## Requirements
 
