@@ -15,7 +15,9 @@ class CategoryModel(db.Model, BaseModel, PaginationModel):
     updated_time = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     user = db.relationship("UserModel", back_populates="categories")
-    items = db.relationship("ItemModel", back_populates="category")
+    items = db.relationship(
+        "ItemModel", back_populates="category", cascade="all, delete-orphan"
+    )
 
     def __init__(self, name, user_id):
         self.name = name

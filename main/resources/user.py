@@ -70,10 +70,12 @@ def require_user_token(func):
         if not jwt_token:
             return exceptions.BadRequest(error_message="Token expected.").to_response()
 
-        token_header, token_content = jwt_token.split()
-        if token_header.strip() == "JWT":
+        token_parts = jwt_token.split()
+        if len(token_parts) < 1 or len(token_parts) > 2:
+            return exceptions.BadRequest(error_message="Invalid token.").to_response()
+        if token_parts[0].strip() == "JWT":
             try:
-                user = UserTokenResource.get_identity_from_token(token_content.strip())
+                user = UserTokenResource.get_identity_from_token(token_parts[1].strip())
             except ExpiredSignatureError:
                 return exceptions.BadRequest(
                     error_message="Expired token."

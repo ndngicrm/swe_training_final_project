@@ -53,7 +53,7 @@ class ItemResource:
         try:
             item = cls.schema.load(request_data)
         except ValidationError as error:
-            return exceptions.ValidationError(error_data=error.data).to_response()
+            return exceptions.ValidationError(error_data=error.messages).to_response()
 
         category = CategoryModel.find_by_id(item.category_id)
         if not category:

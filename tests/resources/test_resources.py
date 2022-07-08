@@ -1,6 +1,6 @@
 from main.models.user import UserModel
 from main.resources.user import UserTokenResource
-from tests.data import users_info
+from tests.data import items_info, users_info
 
 
 def test_user_resource(client):
@@ -114,13 +114,13 @@ def test_category_resource(client):
     assert response.status_code == 200
     assert response.text == ""
 
-    # Not found, not working with pytest, work with post man
-    # response = client.delete(
-    #     "/categories/1000",
-    #     headers={"Authorization": "JWT" + access_token}
-    # )
-    # assert response.json == None
-    # assert response.status_code == 404
+    # Not found
+    response = client.delete(
+        "/categories/1000", headers={"Authorization": "JWT " + access_token}
+    )
+    assert response.status_code == 404
+
+    # Add case delete all
 
 
 def test_item_resource(client):
@@ -147,3 +147,89 @@ def test_item_resource(client):
 
     response = client.get("/items", query_string={"a": 1})
     assert response.status_code == 400
+
+    # GET with ID
+    # Regular cases
+    response = client.get("/items/1")
+    assert response.status_code == 200
+    assert response.json["name"] == items_info[0][0]
+
+    # Not found
+    response = client.get("/items/10000")
+    assert response.status_code == 404
+
+    # ACCESS_TOKEN
+    access_token = client.post(
+        "/users/tokens", json={"email": users_info[0][0], "password": users_info[0][1]}
+    ).json["access_token"]
+
+    wrong_access_token = client.post(
+        "/users/tokens", json={"email": users_info[1][0], "password": users_info[1][1]}
+    ).json["access_token"]
+
+    # POST
+    # Regular cases
+    json_request = {"name": "New item 1", "description": "Ahdsansa", "category_id": 1}
+    response = client.post(
+        "/items",
+        json=json_request,
+        headers={"Authorization": "JWT " + access_token},
+    )
+    assert response.status_code == 200
+    assert "id" in response.json
+
+    # Category not found
+    json_request = {"name": "New item 2", "description": "Ahdsansa", "category_id": 500}
+    response = client.post(
+        "/items", json=json_request, headers={"Authorization": "JWT " + access_token}
+    )
+    assert response.status_code == 404
+
+    # No permission
+    json_request = {"name": "New item 2", "description": "Ahdsansa", "category_id": 9}
+    response = client.post(
+        "/items", json=json_request, headers={"Authorization": "JWT " + access_token}
+    )
+    assert response.status_code == 403
+
+    # PUT
+    # Regular cases
+    json_request = {"name": "New item 3", "description": "alkdjas", "category_id": 1}
+    response = client.put(
+        "/items/1", json=json_request, headers={"Authorization": "JWT" + access_token}
+    )
+
+    # Item not found
+    json_request = {"name": "New item 4", "description": "kjas", "category_id": 1}
+    response = client.put(
+        "/items/1000",
+        json=json_request,
+        headers={"Authorization": "JWT " + access_token},
+    )
+    assert response.status_code == 404
+
+    # No permission
+    response = client.put(
+        "/items/1",
+        json=json_request,
+        headers={"Authorization": "JWT " + wrong_access_token},
+    )
+    assert response.status_code == 403
+
+    # DELETE
+    # Regular cases
+    response = client.delete(
+        "/items/1", headers={"Authorization": "JWT " + access_token}
+    )
+    assert response.status_code == 200
+
+    # Item not found
+    response = client.delete(
+        "/items/10000", headers={"Authorization": "JWT " + access_token}
+    )
+
+    # No permission
+    response = client.delete(
+        "/items/3", headers={"Authorization": "JWT " + wrong_access_token}
+    )
+    assert response.status_code == 403

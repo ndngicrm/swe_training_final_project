@@ -174,3 +174,4 @@ cython_debug/
 coverage_report/
 
 tmp.py
+.DS_STORE
