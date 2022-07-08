@@ -15,8 +15,6 @@ class UserSchema(BaseSchema):
 
     @validates("password")
     def validate_password(self, password):
-        if not (password):
-            raise ValidationError("Password can only consist letters and numbers.")
         if len(password) < 6 or len(password) > 256:
             raise ValidationError("Password must be 6-256 characters in length.")
         if not any(password_char.isupper() for password_char in password):

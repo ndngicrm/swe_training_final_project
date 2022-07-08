@@ -5,9 +5,10 @@ from hashlib import sha256
 from sqlalchemy.dialects import mysql
 
 from main import db
+from main.models.base import BaseModel
 
 
-class UserModel(db.Model):
+class UserModel(db.Model, BaseModel):
     __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(mysql.VARCHAR(320), nullable=False, unique=True)
@@ -15,6 +16,8 @@ class UserModel(db.Model):
     salt = db.Column(mysql.CHAR(32), nullable=False)
     created_time = db.Column(db.DateTime, default=datetime.now)
     updated_time = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+    categories = db.relationship("CategoryModel", back_populates="user")
 
     def __init__(self, email, password):
         self.email = email
@@ -25,17 +28,9 @@ class UserModel(db.Model):
         self.created_time = datetime.now()
         self.updated_time = self.created_time
 
-    def save_to_db(self):
-        db.session.add(self)
-        db.session.commit()
-
     @classmethod
     def __get_password_hash(cls, password, salt):
         return sha256((password + salt).encode()).hexdigest()
-
-    @classmethod
-    def find_by_id(cls, _id):
-        return cls.query.filter_by(id=_id).first()
 
     @classmethod
     def find_by_email(cls, email):

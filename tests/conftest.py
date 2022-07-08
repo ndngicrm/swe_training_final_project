@@ -35,6 +35,20 @@ def recreate_database(app):
     _config = Config(ALEMBIC_CONFIG)
     upgrade(_config, "heads")
 
+    from main.models.category import CategoryModel
+    from main.models.item import ItemModel
+    from main.models.user import UserModel
+    from tests import data
+
+    def create_objects(object_infos, ObjectClass):
+        for info in object_infos:
+            obj = ObjectClass(*info)
+            obj.save_to_db()
+
+    create_objects(data.users_info, UserModel)
+    create_objects(data.categories_info, CategoryModel)
+    create_objects(data.items_info, ItemModel)
+
 
 @pytest.fixture(scope="function", autouse=True)
 def session(monkeypatch):

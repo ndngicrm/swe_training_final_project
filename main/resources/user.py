@@ -1,5 +1,5 @@
-import functools
 from datetime import datetime, timedelta
+from functools import wraps
 
 import jwt
 from flask import jsonify, request
@@ -28,6 +28,7 @@ class UserResource:
 class UserTokenResource:
     schema = UserCredentialSchema()
     algorithm = "HS256"
+    token_endpoint = "/users/tokens"
 
     @classmethod
     def post(cls, request_data):
@@ -59,41 +60,30 @@ class UserTokenResource:
         from main import app
 
         decoded_token = jwt.decode(token, app.secret_key, algorithms=[cls.algorithm])
-        print(decoded_token)
         return UserModel.find_by_id(decoded_token["id"])
 
 
-def require_user_authentication(endpoint):
-    from main import app
+def require_user_token(func):
+    @wraps(func)
+    def authenticate(*args, **kwargs):
+        jwt_token = request.headers.get("Authorization")
+        if not jwt_token:
+            return exceptions.BadRequest(error_message="Token expected.").to_response()
 
-    def authenticate(func):
-        @app.route(endpoint, methods=["POST"])
-        @functools.wraps(func)
-        def authenticator():
-            jwt_token = request.headers.get["Authentication"]
-            if not jwt_token:
+        token_header, token_content = jwt_token.split()
+        if token_header.strip() == "JWT":
+            try:
+                user = UserTokenResource.get_identity_from_token(token_content.strip())
+            except ExpiredSignatureError:
                 return exceptions.BadRequest(
-                    error_message="Token expected."
+                    error_message="Expired token."
                 ).to_response()
-
-            token_header, token_content = jwt_token.split()
-            if token_header.strip() == "JWT":
-                try:
-                    user = UserTokenResource.get_identity_from_token(
-                        token_content.strip()
-                    )
-                except ExpiredSignatureError:
-                    return exceptions.BadRequest(
-                        error_message="Expired token."
-                    ).to_response()
-                except Exception:
-                    return exceptions.BadRequest(
-                        error_message="Invalid token."
-                    ).to_response()
-                if user:
-                    return func
-            return exceptions.BadRequest(error_message="Invalid token.").to_response()
-
-        return authenticator
+            except Exception:
+                return exceptions.BadRequest(
+                    error_message="Invalid token."
+                ).to_response()
+            if user:
+                return func(*args, **kwargs, user_id=user.id)
+        return exceptions.BadRequest(error_message="Invalid token.").to_response()
 
     return authenticate

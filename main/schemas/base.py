@@ -10,7 +10,12 @@ class BaseSchema(Schema):
         return jsonify(self.dump(obj, many=many))
 
 
-class PaginationSchema(BaseSchema):
-    items_per_page = fields.Integer()
+class PaginationResponseSchema(BaseSchema):
+    per_page = fields.Integer()
     page = fields.Integer()
     total_items = fields.Integer()
+
+
+class PaginationParamSchema(BaseSchema):
+    per_page = fields.Integer()
+    page = fields.Integer()

@@ -7,7 +7,8 @@ from flask_sqlalchemy import SQLAlchemy
 
 from .commons.error_handlers import register_error_handlers
 from .config import config
-from .route import register_routes
+from .libs.log import ServiceLogger
+from .resources.route_handlers import register_routes
 
 app = Flask(__name__)
 app.config.from_object(config)
@@ -16,6 +17,8 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 CORS(app)
+
+logger = ServiceLogger("sqlalchemy")
 
 
 def register_subpackages():
