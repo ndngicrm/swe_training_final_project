@@ -30,10 +30,26 @@ pip install -r requirements-dev.txt
   pre-commit install
   ```
 
+## Migrate database
+- Create a `catalog` and `catalog_test` schema in MySQL
+- Update URI and password in `/config/base.py` and `/config/test.py`. 
+  - URI should have the form: `"mysql+pymysql://root:{password}@{database_uri}/catalog"`
+- Migrate
+  ```
+  flask db upgrade
+  ```
+
 ## Running
 
+### Set environment
+```
+export FLASK_ENV={local/development/production/test}
+```
+
+### Start server
 Inside the virtual environment, run
 
 ```shell
 python run.py
 ```
+
