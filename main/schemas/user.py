@@ -9,11 +9,14 @@ class UserSchema(BaseSchema):
 
     @pre_load
     def preprocess_password(self, data, **kwargs):
-        data["password"] = data["password"].strip()
+        if "password" in data and isinstance(data["password"], str):
+            data["password"] = data["password"].strip()
         return data
 
     @validates("password")
     def validate_password(self, password):
+        if not password.isascii():
+            raise ValidationError("Password can only contains ascii characters.")
         if len(password) < 6 or len(password) > 256:
             raise ValidationError("Password must be 6-256 characters in length.")
         if not any(password_char.isupper() for password_char in password):

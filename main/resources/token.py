@@ -1,7 +1,11 @@
-from main.commons.decorators import load_data_with_schema, need_user_token
+from main.commons.decorators import load_data_with_schema
 from main.commons.exceptions import Unauthorized
 from main.models.user import UserModel
-from main.schemas.token import TokenCredentialSchema, TokenEncodeSchema
+from main.schemas.token import (
+    TokenCredentialSchema,
+    TokenDecodeSchema,
+    TokenEncodeSchema,
+)
 
 
 class TokenResource:
@@ -17,15 +21,15 @@ class TokenResource:
     @classmethod
     def get_token(cls, id):
         @load_data_with_schema(TokenEncodeSchema())
-        def get_token(**kwargs):
-            return kwargs["data"]["token"]
+        def get_token(data, **kwargs):
+            return data["token"]
 
         return get_token(data=dict(id=id))
 
     @classmethod
     def get_id_from_token(cls, token):
-        @need_user_token(UserModel, str="optional")
-        def get_id_from_token(**kwargs):
-            return kwargs["user_id"]
+        @load_data_with_schema(TokenDecodeSchema())
+        def get_id_from_token(data, **kwargs):
+            return data["id"]
 
         return get_id_from_token(data=dict(token=token))

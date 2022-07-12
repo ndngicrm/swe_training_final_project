@@ -1,4 +1,4 @@
-from marshmallow import ValidationError, fields, pre_load, validates
+from marshmallow import ValidationError, fields, pre_load, validates, validates_schema
 
 from main.schemas.base import (
     BaseSchema,
@@ -19,8 +19,10 @@ class ItemSchema(BaseSchema):
 
     @pre_load
     def preprocess_str(self, data, **kwargs):
-        data["name"] = data["name"].strip()
-        data["description"] = data["description"].strip()
+        if "name" in data and isinstance(data["name"], str):
+            data["name"] = data["name"].strip()
+        if "description" in data and isinstance(data["description"], str):
+            data["description"] = data["description"].strip()
         return data
 
     @validates("name")
@@ -41,9 +43,18 @@ class ItemDataSchema(ItemSchema):
     description = fields.String(required=False, allow_none=False)
     category_id = fields.Integer(required=False, allow_none=False)
 
+    @validates_schema
+    def validate_schema(self, data, **kwargs):
+        if (
+            "name" not in data
+            and "description" not in data
+            and "category_id" not in data
+        ):
+            raise ValidationError("At least 1 field must not be empty.")
+
 
 class ItemPaginationResponseSchema(PaginationResponseSchema):
-    items = fields.List(fields.Nested(ItemSchema, exclude=["description"]))
+    items = fields.List(fields.Nested(ItemSchema))
 
 
 class ItemPaginationParamSchema(PaginationParamSchema):

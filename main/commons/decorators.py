@@ -2,6 +2,7 @@ from functools import wraps
 
 from flask import request
 from marshmallow import ValidationError
+from sqlalchemy.exc import SQLAlchemyError
 
 from main.commons.exceptions import BadRequest, InternalServerError, NotFound
 from main.commons.exceptions import ValidationError as _ValidationError
@@ -31,10 +32,10 @@ def secure_sql_error(func):
     """
 
     @wraps(func)
-    def execute_and_catch(*arg, **kwargs):
+    def execute_and_catch(*args, **kwargs):
         try:
-            return func(*arg, **kwargs)
-        except Exception as error:
+            return func(*args, **kwargs)
+        except SQLAlchemyError as error:
             raise InternalServerError(
                 error_message=f"SQL Error: {type(error).__name__}"
             )
@@ -60,7 +61,7 @@ def load_data_with_schema(schema):
     return wrapper
 
 
-def validate_unique_attrs(Model, attrs=[]):
+def check_no_instance_existed(Model, attrs=[]):
     """
     Make sure each key in `attrs` has a unique instance in the `Model`. Otherwise,
     raise `ValidationError`. Take values from kwarg `data`.
@@ -68,8 +69,8 @@ def validate_unique_attrs(Model, attrs=[]):
 
     def wrapper(func):
         @wraps(func)
-        @secure_sql_error
         @catch_validation_error_data
+        @secure_sql_error
         def execute(*args, **kwargs):
             data = kwargs["data"]
             # Preserve order of validation as listed in `attrs`
@@ -86,7 +87,7 @@ def validate_unique_attrs(Model, attrs=[]):
     return wrapper
 
 
-def need_existing_attrs(Model, attrs=[], tag=None):
+def need_existing_instance(Model, attrs=[], tag=None):
     """
     Make sure at least one key in `attrs` have at least one instance. Otherwise,
     raise `ValidationError`. Take data from kwarg `data`. Append `existed` as a
@@ -97,8 +98,8 @@ def need_existing_attrs(Model, attrs=[], tag=None):
 
     def wrapper(func):
         @wraps(func)
-        @secure_sql_error
         @catch_validation_error_data
+        @secure_sql_error
         def execute(*args, **kwargs):
             data = kwargs["data"]
             intersect = set(attrs) & set(data.keys())
@@ -127,7 +128,7 @@ def need_user_token(UserModel, mode="required"):
 
     def wrapper(func):
         @load_data_with_schema(TokenDecodeSchema())
-        @need_existing_attrs(UserModel, attrs=["id"])
+        @need_existing_instance(UserModel, attrs=["id"])
         def decode_token(**kwargs):
             user = kwargs["existed"]["id"]
             return user.id

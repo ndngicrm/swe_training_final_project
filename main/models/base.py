@@ -21,7 +21,6 @@ def filter_by_allowed_attributes(func):
         if all(key in args[0].filter_allowed for key in included_kwargs):
             kwargs["filtered"] = args[0].query.filter_by(**included_kwargs)
             return func(*args, **kwargs)
-        print({key: key in args[0].filter_allowed for key in kwargs})
         return None
 
     return filter_by_allowed
@@ -32,8 +31,8 @@ class QueryMixin:
     filter_excluded = ["start", "stop"]
 
     @classmethod
-    @secure_sql_error
     @filter_by_allowed_attributes
+    @secure_sql_error
     def find_by_attributes(cls, **kwargs):
         """
         Find first instance with attributes listed in `kwargs`.
@@ -41,8 +40,8 @@ class QueryMixin:
         return kwargs["filtered"].first()
 
     @classmethod
-    @secure_sql_error
     @filter_by_allowed_attributes
+    @secure_sql_error
     def get_many(cls, start, stop, **kwargs):
         """
         Get list of instances with attributes listed in `kwargs`.
@@ -50,13 +49,12 @@ class QueryMixin:
         return kwargs["filtered"].slice(start - 1, stop).all()
 
     @classmethod
-    @secure_sql_error
     @filter_by_allowed_attributes
+    @secure_sql_error
     def get_size(cls, **kwargs):
         """
         Get total number of instances with attributes listed in `kwargs`.
         """
-        print(kwargs["filtered"])
         # return kwargs["filtered"].count()
         return len(kwargs["filtered"].all())
 

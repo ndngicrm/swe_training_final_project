@@ -1,8 +1,10 @@
+from marshmallow import ValidationError
+
 from main.commons.decorators import (
+    check_no_instance_existed,
     load_data_with_schema,
-    need_existing_attrs,
+    need_existing_instance,
     need_user_token,
-    validate_unique_attrs,
 )
 from main.commons.exceptions import Forbidden
 from main.models.category import CategoryModel
@@ -18,11 +20,10 @@ from main.schemas.item import (
 
 class ItemResource:
     class __ItemResourceHandler:
-        def check_category_permssion(self, user_id, category_id, mode="error"):
-            @need_existing_attrs(CategoryModel, attrs=["id"])
+        def check_category_permission(self, user_id, category_id, mode="error"):
+            @need_existing_instance(CategoryModel, attrs=["id"])
             def check_permission(data, **kwargs):
                 category = kwargs["existed"]["id"]
-                print(mode)
                 if mode == "boolean":
                     return True if category.user_id == user_id else False
                 if mode == "error":
@@ -34,13 +35,13 @@ class ItemResource:
             return check_permission(data=dict(id=category_id))
 
         def check_category_exist(self, category_id):
-            @need_existing_attrs(CategoryModel, attrs=["id"])
-            def check_category(**kwargs):
-                pass
-
+            check_category = need_existing_instance(CategoryModel, attrs=["id"])(
+                lambda data, **kwargs: None
+            )
             check_category(data=dict(id=category_id))
 
     handler = __ItemResourceHandler()
+    schema = ItemSchema()
 
     @classmethod
     @need_user_token(UserModel, mode="optional")
@@ -55,17 +56,16 @@ class ItemResource:
         print(items)
 
         if items:
-            schema = ItemSchema()
             new_items = list()
             for item in items:
-                item_data = schema.dump(item)
+                item_data = cls.schema.dump(item)
                 if "user_id" in kwargs:
-                    item_data["is_owner"] = cls.handler.check_category_permssion(
+                    item_data["is_owner"] = cls.handler.check_category_permission(
                         kwargs["user_id"], item.category_id, mode="boolean"
                     )
                 else:
                     item_data["is_owner"] = False
-                new_items.append(schema.load(item_data))
+                new_items.append(cls.schema.load(item_data))
             items = new_items
         else:
             items = list()
@@ -83,62 +83,73 @@ class ItemResource:
 
     @classmethod
     @need_user_token(UserModel, mode="optional")
-    @need_existing_attrs(ItemModel, attrs=["id"])
+    @need_existing_instance(ItemModel, attrs=["id"])
     def get_with_id(cls, *, data, **kwargs):
         item = kwargs["existed"]["id"]
 
-        schema = ItemSchema()
-        item_data = schema.dump(item)
+        item_data = cls.schema.dump(item)
         if "user_id" in kwargs:
-            item_data["is_owner"] = cls.handler.check_category_permssion(
+            item_data["is_owner"] = cls.handler.check_category_permission(
                 kwargs["user_id"], item.category_id, mode="boolean"
             )
         else:
             item_data["is_owner"] = False
 
-        return schema.load(item_data)
+        return ItemSchema().jsonify(cls.schema.load(item_data))
 
     @classmethod
     @need_user_token(UserModel)
     @load_data_with_schema(ItemSchema())
-    @validate_unique_attrs(ItemModel, attrs=["name"])
+    @check_no_instance_existed(ItemModel, attrs=["name"])
     def post(cls, *, data, **kwargs):
         user_id = kwargs["user_id"]
         cls.handler.check_category_exist(data["category_id"])
-        cls.handler.check_category_permssion(user_id, data["category_id"])
+        cls.handler.check_category_permission(user_id, data["category_id"])
         item = ItemModel(**data)
         item.save_to_db()
-        return dict(id=item.id)
+
+        item_data = cls.schema.dump(item)
+        item_data["is_owner"] = True
+
+        return cls.schema.jsonify(cls.schema.load(item_data))
 
     @classmethod
     @need_user_token(UserModel)
     @load_data_with_schema(ItemDataSchema())
-    @need_existing_attrs(ItemModel, attrs=["id"])
+    @need_existing_instance(ItemModel, attrs=["id"])
     def put(cls, *, data, **kwargs):
         user_id = kwargs["user_id"]
         item = kwargs["existed"]["id"]
 
-        cls.handler.check_category_permssion(user_id, item.category_id)
+        cls.handler.check_category_permission(user_id, item.category_id)
 
         if "category_id" in data:
             cls.handler.check_category_exist(data["category_id"])
-            cls.handler.check_category_permssion(user_id, data["category_id"])
+            cls.handler.check_category_permission(user_id, data["category_id"])
             item.category_id = data["category_id"]
 
-        item.name = data["name"] if "name" in data else item.name
+        if "name" in data and item.name != data["name"]:
+            if ItemModel.find_by_attributes(**dict(name=data["name"])):
+                raise ValidationError(dict(name=["Name has already been used."]))
+            item.name = data["name"]
+
         item.description = (
             data["description"] if "description" in data else item.description
         )
 
         item.save_to_db()
-        return ItemSchema().jsonify(item)
+
+        item_data = cls.schema.dump(item)
+        item_data["is_owner"] = True
+
+        return cls.schema.jsonify(cls.schema.load(item_data))
 
     @classmethod
     @need_user_token(UserModel)
-    @need_existing_attrs(ItemModel, attrs=["id"])
+    @need_existing_instance(ItemModel, attrs=["id"])
     def delete(cls, *, data, **kwargs):
         user_id = kwargs["user_id"]
         item = kwargs["existed"]["id"]
-        cls.handler.check_category_permssion(user_id, item.category_id)
+        cls.handler.check_category_permission(user_id, item.category_id)
         item.delete_from_db()
         return dict()

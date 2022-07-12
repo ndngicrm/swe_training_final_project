@@ -42,12 +42,12 @@ def recreate_database(app):
 
     def create_objects(object_infos, ObjectClass):
         for info in object_infos:
-            obj = ObjectClass(*info)
+            obj = ObjectClass(**info)
             obj.save_to_db()
 
-    create_objects(data.users_info, UserModel)
-    create_objects(data.categories_info, CategoryModel)
-    create_objects(data.items_info, ItemModel)
+    create_objects(data.USER_INFOS, UserModel)
+    create_objects(data.CATEGORY_INFOS, CategoryModel)
+    create_objects(data.ITEM_INFOS, ItemModel)
 
 
 @pytest.fixture(scope="function", autouse=True)

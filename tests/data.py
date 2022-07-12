@@ -1,28 +1,64 @@
-users_info = [
-    ("nghia1@gmail.com", "Aa123456"),
-    ("nghia2@yahoo.com", "AAAaaa111"),
-    ("nghia3@postman.com", "AA@aa111"),
-    ("nghia4.nd@aaaa.com", "AAA!!!a111"),
+USER_INFOS = [
+    {"email": "nghia1@gmail.com", "password": "Aa123456"},
+    {"email": "nghia2@yahoo.com", "password": "AAAaaa111"},
+    {"email": "nghia3@postman.com", "password": "AA@aa111"},
+    {"email": "nghia4.nd@aaaa.com", "password": "AAA!!!a111"},
 ]
 
-categories_info = [
-    ("Cat 1", 1),
-    ("Cat 2", 2),
-    ("Cat 3", 3),
-    ("Cat 4", 4),
-    ("Cat 5", 1),
-    ("Cat 6", 1),
-    ("Cat 7", 2),
-    ("Cat 8", 1),
-    ("Cat 9", 3),
-    ("Cat 10", 1),
+CATEGORY_INFOS = [
+    {"name": "Cat 1", "user_id": 1},
+    {"name": "Cat 2", "user_id": 1},
+    {"name": "Cat 3", "user_id": 1},
+    {"name": "Cat 4", "user_id": 1},
+    {"name": "Cat 5", "user_id": 2},
+    {"name": "Cat 6", "user_id": 2},
+    {"name": "Cat 7", "user_id": 2},
+    {"name": "Cat 8", "user_id": 3},
+    {"name": "Cat 9", "user_id": 4},
+    {"name": "Cat 10", "user_id": 4},
 ]
 
-items_info = [
-    ("Item 1", "sdasaas", 1),
-    ("Item 2", "sadas", 2),
-    ("Item 3", "casassa", 1),
-    ("Item 4", "cacascas", 2),
-    ("Item 5", "dsaascas", 5),
-    ("Item 6", "asdasaw", 3),
+ITEM_INFOS = [
+    {
+        "name": "Item 1",
+        "description": "dashnajsnxaocnax cqaiouhwnopqdijackl caoshnckas",
+        "category_id": 1,
+    },
+    {"name": "Item 2", "description": "dwqfr dsaaw caoshnckas", "category_id": 1},
+    {"name": "Item 3", "description": "dasdas das caoshnckas", "category_id": 1},
+    {
+        "name": "Item 4",
+        "description": "dashnajsnxaocnax cqaiouhwnopqdijackl caoshnckas",
+        "category_id": 2,
+    },
+    {
+        "name": "Item 5",
+        "description": "c dscds cqaiouhwnopqdijackl caoshnckas",
+        "category_id": 2,
+    },
+    {
+        "name": "Item 6",
+        "description": "dashnajsnxaocnax esfewasclijx  caoshnckas",
+        "category_id": 3,
+    },
+    {
+        "name": "Item 7",
+        "description": "fcwascw cqaiouhwnopqdijackl caoshnckas",
+        "category_id": 4,
+    },
+    {
+        "name": "Item 8",
+        "description": "dqwouijcklasnk cqaiouhwnopqdijackl caoshnckas",
+        "category_id": 5,
+    },
+    {
+        "name": "Item 9",
+        "description": "dashnajsnxaocnax cqaiouhwnopqdijackl fqwascq",
+        "category_id": 6,
+    },
+    {
+        "name": "Item 10",
+        "description": "d2qaws aouwdixnkas caoshnckas",
+        "category_id": 7,
+    },
 ]

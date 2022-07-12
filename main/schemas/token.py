@@ -14,7 +14,8 @@ class TokenCredentialSchema(BaseSchema):
 
     @pre_load
     def preprocess_password(self, data, **kwargs):
-        data["password"] = data["password"].strip()
+        if "password" in data and isinstance(data["password"], str):
+            data["password"] = data["password"].strip()
         return data
 
 

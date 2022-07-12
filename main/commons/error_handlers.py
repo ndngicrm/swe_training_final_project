@@ -47,4 +47,6 @@ def register_error_handlers(app):
         logger = ServiceLogger(__name__)
         logger.exception(message=str(e))
 
-        return InternalServerError(error_message=str(e)).to_response()
+        return InternalServerError(
+            error_message=f"Interval Server Error: {type(e).__name__}"
+        ).to_response()

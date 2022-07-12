@@ -13,7 +13,8 @@ class CategorySchema(BaseSchema):
 
     @pre_load
     def preprocess_str(self, data, **kwargs):
-        data["name"] = data["name"].strip()
+        if "name" in data and isinstance(data["name"], str):
+            data["name"] = data["name"].strip()
         return data
 
     @validates("name")
