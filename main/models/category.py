@@ -3,10 +3,10 @@ from datetime import datetime
 from sqlalchemy.dialects import mysql
 
 from main import db
-from main.models.base import BaseModel, PaginationModel
+from main.models.base import EditMixin, QueryMixin
 
 
-class CategoryModel(db.Model, BaseModel, PaginationModel):
+class CategoryModel(db.Model, EditMixin, QueryMixin):
     __tablename__ = "category"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(mysql.VARCHAR(80), nullable=False, unique=True)
@@ -19,10 +19,8 @@ class CategoryModel(db.Model, BaseModel, PaginationModel):
         "ItemModel", back_populates="category", cascade="all, delete-orphan"
     )
 
+    filter_allowed = ["id", "name"]
+
     def __init__(self, name, user_id):
         self.name = name
         self.user_id = user_id
-
-    @classmethod
-    def find_by_name(cls, name):
-        return cls.query.filter_by(name=name).first()

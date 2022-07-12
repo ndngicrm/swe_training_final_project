@@ -5,10 +5,10 @@ from hashlib import sha256
 from sqlalchemy.dialects import mysql
 
 from main import db
-from main.models.base import BaseModel
+from main.models.base import EditMixin, QueryMixin
 
 
-class UserModel(db.Model, BaseModel):
+class UserModel(db.Model, EditMixin, QueryMixin):
     __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(mysql.VARCHAR(320), nullable=False, unique=True)
@@ -18,6 +18,8 @@ class UserModel(db.Model, BaseModel):
     updated_time = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     categories = db.relationship("CategoryModel", back_populates="user")
+
+    filter_allowed = ["id", "email"]
 
     def __init__(self, email, password):
         self.email = email
@@ -33,12 +35,8 @@ class UserModel(db.Model, BaseModel):
         return sha256((password + salt).encode()).hexdigest()
 
     @classmethod
-    def find_by_email(cls, email):
-        return cls.query.filter_by(email=email).first()
-
-    @classmethod
     def is_valid_user(cls, email, password):
-        user = cls.find_by_email(email)
+        user = cls.find_by_attributes(email=email)
         if user:
             if cls.__get_password_hash(password, user.salt) == user.password:
                 return True

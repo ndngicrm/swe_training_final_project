@@ -1,76 +1,67 @@
 from flask import request
 
-from main.commons import exceptions
+from main.schemas.base import SimpleIdSchema
 
 
 def __register_user_route(app):
-    from .user import UserResource, UserTokenResource
+    from .user import UserResource
 
     @app.route("/users", methods=["POST"])
     def route_user():
-        return UserResource.post(request.get_json())
+        return UserResource.post(data=request.get_json())
 
-    @app.route("/users/tokens", methods=["POST"])
-    def route_user_token():
-        return UserTokenResource.post(request.get_json())
+
+def __register_token_route(app):
+    from .token import TokenResource
+
+    @app.route("/access-tokens", methods=["POST"])
+    def route_token():
+        return TokenResource.post(data=request.get_json())
 
 
 def __register_category_route(app):
-    from main.schemas.base import PaginationParamSchema
-
     from .category import CategoryResource
 
     @app.route("/categories", methods=["GET", "POST"])
     def route_category():
         if request.method == "GET":
-            valid_args = PaginationParamSchema().load(request.args)
-
-            if len(request.args) != len(valid_args):
-                return exceptions.BadRequest(
-                    error_message="Invalid query parameters."
-                ).to_response()
-
-            return CategoryResource.get(**valid_args)
+            return CategoryResource.get(data=request.args.to_dict())
 
         if request.method == "POST":
-            return CategoryResource.post(request.get_json())
+            return CategoryResource.post(data=request.get_json())
 
-    @app.route("/categories/<string:category_id>", methods=["DELETE"])
+    @app.route("/categories/<int:category_id>", methods=["DELETE"])
     def route_category_with_id(category_id):
-        return CategoryResource.delete(category_id)
+        SimpleIdSchema().validate(dict(id=category_id))
+        return CategoryResource.delete(data=dict(id=category_id))
 
 
 def __register_item_route(app):
-    from main.schemas.item import ItemPaginationParamSchema
-
     from .item import ItemResource
 
     @app.route("/items", methods=["GET", "POST"])
     def route_item():
         if request.method == "GET":
-            valid_args = ItemPaginationParamSchema().load(request.args)
-
-            if len(request.args) != len(valid_args):
-                return exceptions.BadRequest(
-                    error_message="Invalid query parameters."
-                ).to_response()
-
-            return ItemResource.get(**valid_args)
+            return ItemResource.get(data=request.args.to_dict())
 
         if request.method == "POST":
-            return ItemResource.post(request.get_json())
+            return ItemResource.post(data=request.get_json())
 
-    @app.route("/items/<string:item_id>", methods=["GET", "PUT", "DELETE"])
+    @app.route("/items/<int:item_id>", methods=["GET", "PUT", "DELETE"])
     def route_item_with_id(item_id):
+        SimpleIdSchema().validate(dict(id=item_id))
         if request.method == "GET":
-            return ItemResource.get_with_id(item_id)
+            return ItemResource.get_with_id(data=dict(id=item_id))
         if request.method == "PUT":
-            return ItemResource.put(request.get_json(), item_id)
+            data = request.get_json()
+            data["id"] = item_id
+            return ItemResource.put(data=data)
         if request.method == "DELETE":
-            return ItemResource.delete(item_id)
+            return ItemResource.delete(data=dict(id=item_id))
 
 
 def register_routes(app):
     __register_user_route(app)
+    __register_token_route(app)
     __register_category_route(app)
     __register_item_route(app)

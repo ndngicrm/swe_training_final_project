@@ -1,17 +1,16 @@
-from marshmallow import ValidationError, fields, post_load, validates
+from marshmallow import ValidationError, fields, pre_load, validates
 
-from main.models.user import UserModel
 from main.schemas.base import BaseSchema
 
 
 class UserSchema(BaseSchema):
-    email = fields.Email(required=True, allow_none=False)
-    password = fields.Str(required=True, allow_none=False)
+    email = fields.Email(required=True)
+    password = fields.String(required=True)
 
-    @validates("email")
-    def validate_email(self, email):
-        if UserModel.find_by_email(email):
-            raise ValidationError("Email has already been used.")
+    @pre_load
+    def preprocess_password(self, data, **kwargs):
+        data["password"] = data["password"].strip()
+        return data
 
     @validates("password")
     def validate_password(self, password):
@@ -23,12 +22,3 @@ class UserSchema(BaseSchema):
             raise ValidationError("Password must contain at least 1 lower character.")
         if not any(password_char.isdigit() for password_char in password):
             raise ValidationError("Password must contain at least 1 digit.")
-
-    @post_load
-    def make_user(self, data, **kwargs):
-        return UserModel(**data)
-
-
-class UserCredentialSchema(BaseSchema):
-    email = fields.Email(required=True, allow_none=False)
-    password = fields.Str(required=True, allow_none=False)

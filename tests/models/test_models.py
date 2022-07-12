@@ -15,7 +15,7 @@ def test_valid_user():
     ]
 
     for info in invalid_info:
-        assert not UserModel.is_valid_user(*info)
+        assert not UserModel.get_user_id(*info)
 
     for info in data.users_info:
-        assert UserModel.is_valid_user(*info)
+        assert UserModel.get_user_id(*info)

@@ -1,62 +1,73 @@
-from marshmallow import ValidationError
-
-from main.commons import exceptions
+from main.commons.decorators import (
+    load_data_with_schema,
+    need_existing_attrs,
+    need_user_token,
+    secure_sql_error,
+    validate_unique_attrs,
+)
+from main.commons.exceptions import Forbidden
 from main.models.category import CategoryModel
-from main.resources.user import require_user_token
+from main.models.user import UserModel
+from main.schemas.base import PaginationParamSchema
 from main.schemas.category import CategoryPaginationResponseSchema, CategorySchema
 
 
 class CategoryResource:
-    schema = CategorySchema()
-    response_schema = CategoryPaginationResponseSchema()
-    max_per_page = 50
+    class __CategoryResourceHandler:
+        @secure_sql_error
+        def check_permission(self, user_id, category):
+            if category.user_id != user_id:
+                raise Forbidden("No permission to edit the category.")
+
+    handler = __CategoryResourceHandler()
 
     @classmethod
-    def get(cls, page=1, per_page=20):
-        if per_page > cls.max_per_page:
-            return exceptions.BadRequest(
-                error_message="Too many items per page requested."
-            ).to_response()
+    @need_user_token(UserModel, mode="optional")
+    @load_data_with_schema(PaginationParamSchema())
+    def get(cls, *, data, **kwargs):
+        categories = CategoryModel.get_many(data["start"], data["stop"])
 
-        start, stop = (page - 1) * per_page + 1, page * per_page
-        categories = CategoryModel.get_many(start, stop)
+        if categories:
+            schema = CategorySchema()
+            new_categories = list()
+            for category in categories:
+                category_data = schema.dump(category)
+                category_data["is_owner"] = (
+                    category.user_id == kwargs["user_id"]
+                    if "user_id" in kwargs
+                    else False
+                )
+                new_categories.append(schema.load(category_data))
 
-        if not categories:
-            return exceptions.NotFound(
-                error_message="No item in requested page."
-            ).to_response()
+            categories = new_categories
+        else:
+            categories = list()
 
-        response = cls.response_schema.jsonify(
+        return CategoryPaginationResponseSchema().jsonify(
             dict(
-                page=page,
-                per_page=per_page,
+                page=data["page"],
+                per_page=data["per_page"],
                 total_items=CategoryModel.get_size(),
                 categories=categories,
             )
         )
-        return response, 200
 
     @classmethod
-    @require_user_token
-    def post(cls, request_data, user_id):
-        try:
-            category = cls.schema.load_with_user_id(request_data, user_id)
-        except ValidationError as error:
-            return exceptions.ValidationError(error_data=error.messages).to_response()
+    @need_user_token(UserModel)
+    @load_data_with_schema(CategorySchema())
+    @validate_unique_attrs(CategoryModel, attrs=["name"])
+    def post(cls, *, data, **kwargs):
+        user_id = kwargs["user_id"]
+        category = CategoryModel(data["name"], user_id)
         category.save_to_db()
-        return dict(id=category.id), 200
+        return dict(id=category.id)
 
     @classmethod
-    @require_user_token
-    def delete(cls, category_id, user_id):
-        category = CategoryModel.find_by_id(category_id)
-        if category:
-            if category.user_id == user_id:
-                category.delete_from_db()
-                return "", 200
-            return exceptions.Forbidden(
-                error_message="Only category's owner can delete."
-            ).to_response()
-        return exceptions.NotFound(
-            error_message="Category cannot be found."
-        ).to_response()
+    @need_user_token(UserModel)
+    @need_existing_attrs(CategoryModel, attrs=["id"])
+    def delete(cls, *, data, **kwargs):
+        category = kwargs["existed"]["id"]
+        user_id = kwargs["user_id"]
+        cls.handler.check_permission(user_id, category)
+        category.delete_from_db()
+        return dict()

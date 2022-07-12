@@ -3,10 +3,10 @@ from datetime import datetime
 from sqlalchemy.dialects import mysql
 
 from main import db
-from main.models.base import BaseModel, PaginationModel
+from main.models.base import EditMixin, QueryMixin
 
 
-class ItemModel(db.Model, BaseModel, PaginationModel):
+class ItemModel(db.Model, EditMixin, QueryMixin):
     __tablename__ = "item"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(mysql.VARCHAR(80), nullable=False, unique=True)
@@ -17,19 +17,9 @@ class ItemModel(db.Model, BaseModel, PaginationModel):
 
     category = db.relationship("CategoryModel", back_populates="items")
 
+    filter_allowed = ["id", "name", "category_id"]
+
     def __init__(self, name, description, category_id):
         self.name = name
         self.description = description
         self.category_id = category_id
-
-    @classmethod
-    def find_by_name(cls, name):
-        return cls.query.filter_by(name=name).first()
-
-    @classmethod
-    def get_many_in_category(cls, category_id, start, stop):
-        return cls.query.filter_by(category_id=category_id).slice(start - 1, stop).all()
-
-    @classmethod
-    def get_size_in_category(cls, category_id):
-        return cls.query.filter_by(category_id=category_id).count()
