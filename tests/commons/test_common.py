@@ -33,5 +33,3 @@ def test_sql_error(mocker):
         raise_sql_error()
     except Exception as error:
         assert "SQL Error" in error.error_message
-    else:
-        assert False
