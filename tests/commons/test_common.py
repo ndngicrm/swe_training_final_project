@@ -24,7 +24,7 @@ def test_internal_server_error(mocker, client):
     assert response.status_code == 500
 
 
-def test_sql_error(mocker):
+def test_sql_error():
     @secure_sql_error
     def raise_sql_error():
         raise SQLAlchemyError
