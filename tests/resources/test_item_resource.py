@@ -41,8 +41,11 @@ class Data:
     ]
 
     PUT_INVALID_REQUEST = [
-        dict(name=ITEM_INFOS[1]["name"]),  # change to used name
-        dict(name="", description=""),  # represent validation error
+        (dict(name=ITEM_INFOS[1]["name"]), 1),  # change to used name
+        (dict(name="", description=""), 1),  # represent validation error
+        (dict(), 1),  # empty
+        (dict(name="knasj"), 0),  # Invalid id
+        (dict(name="knasj", id=1), 1),  # Id in data
     ]
 
     DELETE_VALID_REQUEST = dict(
@@ -136,10 +139,10 @@ def test_item_resource_put_request_valid(client, valid_request):
         assert i in response.json
 
 
-@pytest.mark.parametrize("invalid_request", Data.PUT_INVALID_REQUEST)
-def test_item_resource_put_request_invalid(client, invalid_request):
+@pytest.mark.parametrize("invalid_request, item_id", Data.PUT_INVALID_REQUEST)
+def test_item_resource_put_request_invalid(client, invalid_request, item_id):
     response = client.put(
-        f"/items/{1}",
+        f"/items/{item_id}",
         json=invalid_request,
         headers={"Authorization": Data.TOKEN_FOR_USER_ID_1},
     )

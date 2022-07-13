@@ -8,7 +8,7 @@ class UserSchema(BaseSchema):
     password = fields.String(required=True)
 
     @pre_load
-    def preprocess_password(self, data, **kwargs):
+    def preprocess_password(self, data, **_):
         if "password" in data and isinstance(data["password"], str):
             data["password"] = data["password"].strip()
         return data

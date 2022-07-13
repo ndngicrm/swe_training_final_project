@@ -146,3 +146,25 @@ def need_user_token(UserModel, mode="required"):
         return authenticate
 
     return wrapper
+
+
+def filter_by_allowed_attributes(func):
+    """
+    Decorator for `QueryMixin` classes' classmethods only.
+
+    Return `None` if any of `kwargs` is not in `QueryMixin.filter_allowed`. Otherwise,
+    the decorator will inject a kwarg `filtered` contains `Query.filter_by(**kwargs)`.
+    """
+
+    @wraps(func)
+    @secure_sql_error
+    def filter_by_allowed(*args, **kwargs):
+        included_kwargs = {
+            key: kwargs[key] for key in kwargs if key not in args[0].filter_excluded
+        }
+        if all(key in args[0].filter_allowed for key in included_kwargs):
+            kwargs["filtered"] = args[0].query.filter_by(**included_kwargs)
+            return func(*args, **kwargs)
+        return None
+
+    return filter_by_allowed

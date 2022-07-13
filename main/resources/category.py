@@ -9,7 +9,11 @@ from main.commons.exceptions import Forbidden
 from main.models.category import CategoryModel
 from main.models.user import UserModel
 from main.schemas.base import PaginationParamSchema
-from main.schemas.category import CategoryPaginationResponseSchema, CategorySchema
+from main.schemas.category import (
+    CategoryBaseSchema,
+    CategoryPaginationResponseSchema,
+    CategoryResponseSchema,
+)
 
 
 class CategoryResource:
@@ -20,7 +24,6 @@ class CategoryResource:
                 raise Forbidden(error_message="No permission to edit the category.")
 
     handler = __CategoryResourceHandler()
-    schema = CategorySchema()
 
     @classmethod
     @need_user_token(UserModel, mode="optional")
@@ -31,13 +34,13 @@ class CategoryResource:
         if categories:
             new_categories = list()
             for category in categories:
-                category_data = cls.schema.dump(category)
+                category_data = CategoryResponseSchema().dump(category)
                 category_data["is_owner"] = (
                     category.user_id == kwargs["user_id"]
                     if "user_id" in kwargs
                     else False
                 )
-                new_categories.append(cls.schema.load(category_data))
+                new_categories.append(category_data)
 
             categories = new_categories
         else:
@@ -54,17 +57,17 @@ class CategoryResource:
 
     @classmethod
     @need_user_token(UserModel)
-    @load_data_with_schema(CategorySchema())
+    @load_data_with_schema(CategoryBaseSchema())
     @check_no_instance_existed(CategoryModel, attrs=["name"])
     def post(cls, *, data, **kwargs):
         user_id = kwargs["user_id"]
         category = CategoryModel(data["name"], user_id)
         category.save_to_db()
 
-        category_data = cls.schema.dump(category)
+        category_data = CategoryResponseSchema().dump(category)
         category_data["is_owner"] = True
 
-        return cls.schema.jsonify(cls.schema.load(category_data))
+        return CategoryResponseSchema().jsonify(category_data)
 
     @classmethod
     @need_user_token(UserModel)

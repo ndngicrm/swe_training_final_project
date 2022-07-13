@@ -96,3 +96,5 @@ def test_token_encode_schema_id_valid():
 def test_token_encode_schema_id_invalid():
     # String, not int
     load_invalid_data_and_assert(TokenEncodeSchema, dict(id="A"))
+    # ID smaller than 1
+    load_invalid_data_and_assert(TokenEncodeSchema, dict(id=0))

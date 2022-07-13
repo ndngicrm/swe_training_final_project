@@ -21,15 +21,15 @@ class TokenResource:
     @classmethod
     def get_token(cls, id):
         @load_data_with_schema(TokenEncodeSchema())
-        def get_token(data, **kwargs):
+        def get_token_with_schema(data, **kwargs):
             return data["token"]
 
-        return get_token(data=dict(id=id))
+        return get_token_with_schema(data=dict(id=id))
 
     @classmethod
     def get_id_from_token(cls, token):
         @load_data_with_schema(TokenDecodeSchema())
-        def get_id_from_token(data, **kwargs):
+        def get_id_with_schema(data, **kwargs):
             return data["id"]
 
-        return get_id_from_token(data=dict(token=token))
+        return get_id_with_schema(data=dict(token=token))

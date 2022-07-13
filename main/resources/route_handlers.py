@@ -53,8 +53,8 @@ def __register_item_route(app):
         if request.method == "GET":
             return ItemResource.get_with_id(data=dict(id=item_id))
         if request.method == "PUT":
-            data = request.get_json()
-            data["id"] = item_id
+            # Data to be unpacked by ItemUpdateSchema
+            data = dict(data=request.get_json(), item_id=item_id)
             return ItemResource.put(data=data)
         if request.method == "DELETE":
             return ItemResource.delete(data=dict(id=item_id))

@@ -7,18 +7,13 @@ from main.schemas.base import (
 )
 
 
-class ItemSchema(BaseSchema):
-    # For validation
-    name = fields.String(required=True)
-    description = fields.String(required=True)
-    category_id = fields.Integer(required=True)
-
-    # For jsonify
-    id = fields.Integer(required=False)
-    is_owner = fields.Boolean(required=False)
+class ItemBaseSchema(BaseSchema):
+    name = fields.String(required=False)
+    description = fields.String(required=False)
+    category_id = fields.Integer(required=False)
 
     @pre_load
-    def preprocess_str(self, data, **kwargs):
+    def preprocess_str(self, data, **_):
         if "name" in data and isinstance(data["name"], str):
             data["name"] = data["name"].strip()
         if "description" in data and isinstance(data["description"], str):
@@ -37,14 +32,48 @@ class ItemSchema(BaseSchema):
                 "Item description must be 1-65535 characters in length."
             )
 
+    @validates("category_id")
+    def validate_category_id(self, category_id):
+        if category_id < 1:
+            raise ValidationError("Category ID must be at least 1.")
 
-class ItemDataSchema(ItemSchema):
-    name = fields.String(required=False, allow_none=False)
-    description = fields.String(required=False, allow_none=False)
-    category_id = fields.Integer(required=False, allow_none=False)
+
+class ItemCreateSchema(ItemBaseSchema):
+    name = fields.String(required=True)
+    description = fields.String(required=True)
+    category_id = fields.Integer(required=True)
+
+
+class ItemUpdateSchema(ItemBaseSchema):
+    id = fields.Integer(required=False)
+
+    @pre_load
+    def unpack(self, data, **_):
+        """
+        Data send to ItemResource PUT should have the format
+        ```
+        {
+            data: <request_data>,
+            item_id: <item_id>
+        }
+        ```
+        Doing this to avoid user append invalid `id` within request data instead
+        of endpoint
+        """
+        item_id = data["item_id"]
+        data = data["data"]
+        if "id" in data:
+            raise ValidationError(dict(id=["Unknown field."]))
+        data["id"] = item_id
+        return data
+
+    @validates("id")
+    def validate_id(self, id):
+        if id < 1:
+            raise ValidationError("Item ID must be at least 1")
 
     @validates_schema
-    def validate_schema(self, data, **kwargs):
+    def validate_schema(self, data, **_):
         if (
             "name" not in data
             and "description" not in data
@@ -53,8 +82,9 @@ class ItemDataSchema(ItemSchema):
             raise ValidationError("At least 1 field must not be empty.")
 
 
-class ItemPaginationResponseSchema(PaginationResponseSchema):
-    items = fields.List(fields.Nested(ItemSchema))
+class ItemResponseSchema(ItemBaseSchema):
+    id = fields.Integer(required=False)
+    is_owner = fields.Boolean(required=False)
 
 
 class ItemPaginationParamSchema(PaginationParamSchema):
@@ -64,3 +94,7 @@ class ItemPaginationParamSchema(PaginationParamSchema):
     def validate_category_id(self, category_id):
         if category_id < 1:
             raise ValidationError("Category ID must be at least 1.")
+
+
+class ItemPaginationResponseSchema(PaginationResponseSchema):
+    items = fields.List(fields.Nested(ItemResponseSchema))

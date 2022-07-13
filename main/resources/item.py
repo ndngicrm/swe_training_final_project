@@ -11,10 +11,11 @@ from main.models.category import CategoryModel
 from main.models.item import ItemModel
 from main.models.user import UserModel
 from main.schemas.item import (
-    ItemDataSchema,
+    ItemCreateSchema,
     ItemPaginationParamSchema,
     ItemPaginationResponseSchema,
-    ItemSchema,
+    ItemResponseSchema,
+    ItemUpdateSchema,
 )
 
 
@@ -36,12 +37,11 @@ class ItemResource:
 
         def check_category_exist(self, category_id):
             check_category = need_existing_instance(CategoryModel, attrs=["id"])(
-                lambda data, **kwargs: None
+                lambda data, **_: None
             )
             check_category(data=dict(id=category_id))
 
     handler = __ItemResourceHandler()
-    schema = ItemSchema()
 
     @classmethod
     @need_user_token(UserModel, mode="optional")
@@ -53,19 +53,19 @@ class ItemResource:
             tmp_params["category_id"] = data["category_id"]
 
         items = ItemModel.get_many(start=data["start"], stop=data["stop"], **tmp_params)
-        print(items)
 
         if items:
             new_items = list()
             for item in items:
-                item_data = cls.schema.dump(item)
+                item_data = ItemResponseSchema().dump(item)
                 if "user_id" in kwargs:
                     item_data["is_owner"] = cls.handler.check_category_permission(
                         kwargs["user_id"], item.category_id, mode="boolean"
                     )
                 else:
                     item_data["is_owner"] = False
-                new_items.append(cls.schema.load(item_data))
+                # new_items.append(cls.schema.load(item_data))
+                new_items.append(item_data)
             items = new_items
         else:
             items = list()
@@ -87,7 +87,7 @@ class ItemResource:
     def get_with_id(cls, *, data, **kwargs):
         item = kwargs["existed"]["id"]
 
-        item_data = cls.schema.dump(item)
+        item_data = ItemResponseSchema().dump(item)
         if "user_id" in kwargs:
             item_data["is_owner"] = cls.handler.check_category_permission(
                 kwargs["user_id"], item.category_id, mode="boolean"
@@ -95,11 +95,11 @@ class ItemResource:
         else:
             item_data["is_owner"] = False
 
-        return ItemSchema().jsonify(cls.schema.load(item_data))
+        return ItemResponseSchema().jsonify(item_data)
 
     @classmethod
     @need_user_token(UserModel)
-    @load_data_with_schema(ItemSchema())
+    @load_data_with_schema(ItemCreateSchema())
     @check_no_instance_existed(ItemModel, attrs=["name"])
     def post(cls, *, data, **kwargs):
         user_id = kwargs["user_id"]
@@ -108,14 +108,14 @@ class ItemResource:
         item = ItemModel(**data)
         item.save_to_db()
 
-        item_data = cls.schema.dump(item)
+        item_data = ItemResponseSchema().dump(item)
         item_data["is_owner"] = True
 
-        return cls.schema.jsonify(cls.schema.load(item_data))
+        return ItemResponseSchema().jsonify(item_data)
 
     @classmethod
     @need_user_token(UserModel)
-    @load_data_with_schema(ItemDataSchema())
+    @load_data_with_schema(ItemUpdateSchema())
     @need_existing_instance(ItemModel, attrs=["id"])
     def put(cls, *, data, **kwargs):
         user_id = kwargs["user_id"]
@@ -139,10 +139,10 @@ class ItemResource:
 
         item.save_to_db()
 
-        item_data = cls.schema.dump(item)
+        item_data = ItemResponseSchema().dump(item)
         item_data["is_owner"] = True
 
-        return cls.schema.jsonify(cls.schema.load(item_data))
+        return ItemResponseSchema().jsonify(item_data)
 
     @classmethod
     @need_user_token(UserModel)

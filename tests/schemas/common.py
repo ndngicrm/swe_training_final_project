@@ -1,9 +1,9 @@
 from marshmallow import ValidationError
 
 
-def load_invalid_data_and_assert(Schema, data):
+def load_invalid_data_and_assert(schema_class, data):
     try:
-        Schema().load(data)
+        schema_class().load(data)
     except ValidationError:
         assert True
     else:

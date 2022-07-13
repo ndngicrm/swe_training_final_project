@@ -3,16 +3,11 @@ from marshmallow import ValidationError, fields, pre_load, validates
 from main.schemas.base import BaseSchema, PaginationResponseSchema
 
 
-class CategorySchema(BaseSchema):
-    # For validation
+class CategoryBaseSchema(BaseSchema):
     name = fields.String(required=True)
 
-    # For jsonify
-    id = fields.Integer(required=False)
-    is_owner = fields.Boolean(required=False)
-
     @pre_load
-    def preprocess_str(self, data, **kwargs):
+    def preprocess_str(self, data, **_):
         if "name" in data and isinstance(data["name"], str):
             data["name"] = data["name"].strip()
         return data
@@ -25,5 +20,10 @@ class CategorySchema(BaseSchema):
             )
 
 
+class CategoryResponseSchema(CategoryBaseSchema):
+    id = fields.Integer(required=False)
+    is_owner = fields.Boolean(required=False)
+
+
 class CategoryPaginationResponseSchema(PaginationResponseSchema):
-    categories = fields.List(fields.Nested(CategorySchema))
+    categories = fields.List(fields.Nested(CategoryResponseSchema))

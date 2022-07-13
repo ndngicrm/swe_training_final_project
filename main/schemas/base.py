@@ -34,7 +34,7 @@ class PaginationParamSchema(BaseSchema):
             raise ValidationError("Invalid value.")
 
     @post_load
-    def add_slice(self, data, **kwargs):
+    def add_slice(self, data, **_):
         data["start"] = (data["page"] - 1) * data["per_page"] + 1
         data["stop"] = data["page"] * data["per_page"]
         return data
